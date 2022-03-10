@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+
+<head>
+    <style>
+    .axis {
+      font: 10px sans-serif;
+    }
+    .axis path,
+    .axis line {
+      fill: none;
+      stroke: #000;
+      shape-rendering: crispEdges;
+    }
+    .container {
+      padding: 20px;
+      display: grid;
+      grid-gap: 10px;
+      grid-template-columns: 25%;
+    }
+    .dataset-container {
+        grid-column: 1 / 1;
+    }
+    .models-container {
+        grid-column: 2 / 2;
+    }
+    .models-container ul {
+        display: grid;
+        grid-gap: 10px;
+        grid-template-columns: 25% 25% 25% 25%;
+        list-style-type: none;
+    }
+    .model-confusion-matrix {
+        padding: 20px;
+    }
+    .model-li {
+        padding: 10px;
+        border-radius: 5px;
+        border-color: #c6d6e6;
+        border-style: solid;
+        border-width: 2px;
+    }
+    .confusion-matrix-table td {
+        text-align: center;
+        /*border: 2px solid gray;*/
+    }
+
+    .confusion-matrix-table td.innerMatrix {
+        font-weight: 700;
+    }
+
+    </style>
+</head>
+
+<body>
+    <div class='container'>
+        <div class='dataset-container'>
+            <div class='svg-container' id='dataset-svg'>
+            </div>
+            <div class='data-control-container'>
+                <p>
+                    X-axis:
+                    <select name="x-axis" id="x-axis-select">
+                    </select>
+                </p>
+                <p>
+                    Y-axis:
+                    <select name="y-axis" id="y-axis-select">
+                    </select>
+                </p>
+            </div>
+            <div class='dataset-description-container'>
+                <p>The City of Somerville sends out <a href='https://data.somervillema.gov/Happiness/Somerville-Happiness-Survey-responses-2011-2013-20/w898-3dfm'>a happiness survey</a> to a random sample of Somerville residents asking them to rate their personal happiness and their satisfaction with City services. This combined dataset includes the survey responses from 2011, 2013, and 2015.</p>
+
+                <p> The dataset for this lab is a <a href='https://archive.ics.uci.edu/ml/datasets/Somerville+Happiness+Survey'>subset of the happiness survey</a> with six features, "the availability of info about city services," "cost of housing," "quality of public schools," "trust in local police," "maintenance of streets and sidewalks", and "availability of social and community events".  Each feature is rated from 1 to 5, and each data point is labeled with 1 (happy) or 0 (unhappy).
+            </div>
+        </div>
+        <div class='models-container'>
+            <ul>
+            </ul>
+        </div>
+    </div>
+
+
+    <script src="./d3.v7.min.js"></script>
+    <script>
+        /* BEGIN LOADING DATA */
+        /* Loading the data into variables.  Usually, this would be pulled from an external source, or uploaded,
+        like in the previous lab.  But for portability, we just embed it right in the script tag */
+        var happinessData = JSON.parse('{"132":{"city_services":3,"housing_cost":4,"schools":4,"trust_police":5,"streets_sidewalks":1,"events":3},"53":{"city_services":5,"housing_cost":1,"schools":3,"trust_police":3,"streets_sidewalks":4,"events":4},"110":{"city_services":5,"housing_cost":2,"schools":2,"trust_police":4,"streets_sidewalks":5,"events":5},"89":{"city_services":4,"housing_cost":2,"schools":4,"trust_police":4,"streets_sidewalks":4,"events":4},"33":{"city_services":4,"housing_cost":1,"schools":3,"trust_police":4,"streets_sidewalks":4,"events":5},"68":{"city_services":4,"housing_cost":1,"schools":3,"trust_police":4,"streets_sidewalks":4,"events":4},"4":{"city_services":5,"housing_cost":4,"schools":3,"trust_police":3,"streets_sidewalks":3,"events":5},"131":{"city_services":5,"housing_cost":3,"schools":5,"trust_police":4,"streets_sidewalks":5,"events":5},"81":{"city_services":5,"housing_cost":2,"schools":5,"trust_police":5,"streets_sidewalks":5,"events":5},"26":{"city_services":3,"housing_cost":4,"schools":3,"trust_police":3,"streets_sidewalks":2,"events":3},"77":{"city_services":4,"housing_cost":5,"schools":5,"trust_police":5,"streets_sidewalks":1,"events":3},"123":{"city_services":5,"housing_cost":3,"schools":4,"trust_police":4,"streets_sidewalks":4,"events":4},"2":{"city_services":5,"housing_cost":3,"schools":3,"trust_police":3,"streets_sidewalks":3,"events":5},"103":{"city_services":5,"housing_cost":4,"schools":4,"trust_police":4,"streets_sidewalks":4,"events":5},"113":{"city_services":5,"housing_cost":3,"schools":4,"trust_police":3,"streets_sidewalks":4,"events":3},"92":{"city_services":5,"housing_cost":2,"schools":3,"trust_police":4,"streets_sidewalks":4,"events":5},"10":{"city_services":3,"housing_cost":2,"schools":3,"trust_police":3,"streets_sidewalks":2,"events":3},"27":{"city_services":3,"housing_cost":3,"schools":3,"trust_police":5,"streets_sidewalks":5,"events":5},"13":{"city_services":4,"housing_cost":2,"schools":4,"trust_police":5,"streets_sidewalks":4,"events":3},"121":{"city_services":4,"housing_cost":2,"schools":4,"trust_police":4,"streets_sidewalks":4,"events":4},"116":{"city_services":3,"housing_cost":2,"schools":2,"trust_police":3,"streets_sidewalks":3,"events":3},"130":{"city_services":5,"housing_cost":2,"schools":2,"trust_police":4,"streets_sidewalks":4,"events":5},"85":{"city_services":5,"housing_cost":3,"schools":3,"trust_police":3,"streets_sidewalks":2,"events":5},"44":{"city_services":4,"housing_cost":2,"schools":4,"trust_police":3,"streets_sidewalks":2,"events":4},"80":{"city_services":5,"housing_cost":3,"schools":3,"trust_police":4,"streets_sidewalks":3,"events":3},"114":{"city_services":5,"housing_cost":2,"schools":3,"trust_police":3,"streets_sidewalks":3,"events":5},"102":{"city_services":5,"housing_cost":4,"schools":4,"trust_police":3,"streets_sidewalks":3,"events":4},"23":{"city_services":4,"housing_cost":3,"schools":5,"trust_police":5,"streets_sidewalks":5,"events":4},"84":{"city_services":5,"housing_cost":2,"schools":3,"trust_police":5,"streets_sidewalks":5,"events":5},"133":{"city_services":5,"housing_cost":1,"schools":5,"trust_police":5,"streets_sidewalks":5,"events":5},"60":{"city_services":4,"housing_cost":4,"schools":4,"trust_police":4,"streets_sidewalks":3,"events":4},"63":{"city_services":4,"housing_cost":4,"schools":3,"trust_police":3,"streets_sidewalks":2,"events":5},"30":{"city_services":5,"housing_cost":3,"schools":3,"trust_police":3,"streets_sidewalks":5,"events":3},"7":{"city_services":5,"housing_cost":4,"schools":4,"trust_police":4,"streets_sidewalks":4,"events":5},"1":{"city_services":3,"housing_cost":2,"schools":3,"trust_police":5,"streets_sidewalks":4,"events":3},"142":{"city_services":5,"housing_cost":3,"schools":2,"trust_police":5,"streets_sidewalks":5,"events":5}}')
+
+        var predictionData = JSON.parse('{"ground_truth":{"132":1,"53":1,"110":1,"89":1,"33":0,"68":1,"4":0,"131":0,"81":1,"26":0,"77":0,"123":1,"2":1,"103":1,"113":1,"92":1,"10":0,"27":1,"13":0,"121":0,"116":0,"130":0,"85":0,"44":1,"80":0,"114":0,"102":1,"23":0,"84":1,"133":1,"60":0,"63":1,"30":1,"7":1,"1":0,"142":0},"Nearest Neighbors":{"132":0,"53":1,"110":1,"89":0,"33":0,"68":0,"4":0,"131":1,"81":1,"26":0,"77":0,"123":1,"2":0,"103":1,"113":0,"92":1,"10":0,"27":0,"13":0,"121":0,"116":1,"130":1,"85":1,"44":0,"80":0,"114":0,"102":1,"23":0,"84":1,"133":1,"60":1,"63":0,"30":0,"7":1,"1":0,"142":1},"Linear SVM":{"132":0,"53":1,"110":1,"89":1,"33":1,"68":1,"4":1,"131":1,"81":1,"26":0,"77":0,"123":1,"2":1,"103":1,"113":1,"92":1,"10":0,"27":1,"13":1,"121":1,"116":0,"130":1,"85":1,"44":1,"80":1,"114":1,"102":1,"23":1,"84":1,"133":1,"60":1,"63":1,"30":1,"7":1,"1":0,"142":1},"RBF SVM":{"132":0,"53":1,"110":1,"89":0,"33":1,"68":1,"4":0,"131":1,"81":1,"26":0,"77":0,"123":1,"2":0,"103":1,"113":0,"92":1,"10":0,"27":0,"13":0,"121":0,"116":0,"130":1,"85":0,"44":1,"80":1,"114":0,"102":0,"23":0,"84":1,"133":1,"60":1,"63":0,"30":0,"7":1,"1":0,"142":1},"Gaussian Process":{"132":0,"53":1,"110":1,"89":1,"33":1,"68":1,"4":1,"131":1,"81":1,"26":0,"77":0,"123":1,"2":1,"103":1,"113":1,"92":1,"10":0,"27":1,"13":1,"121":1,"116":0,"130":1,"85":1,"44":0,"80":1,"114":1,"102":1,"23":1,"84":1,"133":1,"60":1,"63":0,"30":1,"7":1,"1":0,"142":1},"Decision Tree":{"132":0,"53":1,"110":1,"89":0,"33":0,"68":0,"4":0,"131":1,"81":1,"26":0,"77":0,"123":1,"2":0,"103":1,"113":1,"92":1,"10":1,"27":0,"13":1,"121":0,"116":1,"130":1,"85":0,"44":0,"80":0,"114":0,"102":1,"23":0,"84":1,"133":1,"60":0,"63":0,"30":1,"7":1,"1":1,"142":1},"Random Forest":{"132":0,"53":1,"110":1,"89":1,"33":1,"68":1,"4":1,"131":1,"81":1,"26":0,"77":0,"123":1,"2":0,"103":1,"113":1,"92":1,"10":0,"27":0,"13":1,"121":1,"116":0,"130":1,"85":1,"44":1,"80":1,"114":1,"102":1,"23":0,"84":1,"133":1,"60":0,"63":0,"30":0,"7":1,"1":0,"142":1},"Neural Net":{"132":0,"53":1,"110":1,"89":1,"33":1,"68":0,"4":0,"131":1,"81":1,"26":0,"77":0,"123":1,"2":1,"103":1,"113":1,"92":1,"10":0,"27":0,"13":0,"121":1,"116":0,"130":1,"85":0,"44":1,"80":1,"114":1,"102":1,"23":1,"84":1,"133":1,"60":0,"63":0,"30":0,"7":1,"1":0,"142":1},"AdaBoost":{"132":0,"53":1,"110":1,"89":1,"33":0,"68":0,"4":0,"131":1,"81":1,"26":0,"77":1,"123":1,"2":1,"103":0,"113":0,"92":1,"10":0,"27":0,"13":0,"121":1,"116":0,"130":1,"85":1,"44":1,"80":0,"114":1,"102":1,"23":1,"84":1,"133":1,"60":0,"63":0,"30":0,"7":0,"1":0,"142":1},"Naive Bayes":{"132":0,"53":1,"110":1,"89":1,"33":1,"68":1,"4":1,"131":1,"81":1,"26":0,"77":0,"123":1,"2":1,"103":1,"113":1,"92":1,"10":0,"27":0,"13":1,"121":1,"116":0,"130":1,"85":1,"44":0,"80":0,"114":1,"102":1,"23":1,"84":1,"133":1,"60":1,"63":0,"30":1,"7":1,"1":0,"142":1},"QDA":{"132":0,"53":1,"110":0,"89":1,"33":1,"68":0,"4":0,"131":1,"81":1,"26":0,"77":0,"123":1,"2":0,"103":1,"113":1,"92":1,"10":0,"27":1,"13":0,"121":1,"116":0,"130":0,"85":0,"44":1,"80":1,"114":1,"102":1,"23":1,"84":1,"133":1,"60":0,"63":0,"30":1,"7":1,"1":0,"142":1}}')
+
+        /* END LOADING DATA */
+
+        // Defining size variables for the SVGs
+        var margin = {top: 20, right: 20, bottom: 30, left: 40},
+            width = 460 - margin.left - margin.right,
+            height = 300 - margin.top - margin.bottom,
+            miniWidth = 230 - margin.left - margin.right,
+            miniHeight = 150 - margin.top - margin.bottom;
+
+        // Choose the initial dimensions that we are rendering
+        var possibleDimensions = Object.keys(happinessData[Object.keys(happinessData)[0]])
+        var xDim = possibleDimensions[0];
+        var yDim = possibleDimensions[1];
+
+        // Initialize the scales and axes
+        var xScale = d3.scaleLinear().range([0, width]),
+            xAxis = d3.axisBottom(xScale).ticks(5),
+            miniXScale = d3.scaleLinear().range([0, miniWidth]),
+            miniXAxis = d3.axisBottom(miniXScale).ticks(5);
+
+        // setup y
+        var yScale = d3.scaleLinear().range([height, 0]),
+            yAxis = d3.axisRight(yScale).ticks(5),
+            miniYScale = d3.scaleLinear().range([miniHeight, 0]),
+            miniYAxis = d3.axisRight(miniYScale).ticks(5);
+
+        xScale.domain([-0.5, 5.5])
+        yScale.domain([-0.5, 5.5])
+        miniXScale.domain([-0.5, 5.5])
+        miniYScale.domain([-0.5, 5.5])
+
+        initializeScales()
+        var modelContainers = initializeModels();
+        redrawScatterplots(modelContainers);
+        drawConfusionMatrices(modelContainers);
+
+        /* SCATTERPLOT CODE - YOU WILL NEED TO CHANGE THIS */
+        function buildScatterPlot(containerElement, data, modelPredictions, groundTruth) {
+            var svgWidth, svgHeight, scatterXScale, scatterXAxis, scatterYScale, scatterYAxis;
+            if (modelPredictions.length === 0) {
+                // scatter plot is for the whole dataset
+                svgWidth = width;
+                svgHeight = height;
+                scatterXScale = xScale;
+                scatterXAxis = xAxis;
+                scatterYScale = yScale;
+                scatterYAxis = yAxis;
+            } else {
+                // scatter plot is for a particular model
+                svgWidth = miniWidth;
+                svgHeight = miniHeight;
+                scatterXScale = miniXScale;
+                scatterXAxis = miniXAxis;
+                scatterYScale = miniYScale;
+                scatterYAxis = miniYAxis;
+            }
+
+            // We destroy any existing SVGs since we're going to rebuild it.
+            d3.select(containerElement).select('svg').remove()
+
+            // Add the svg
+            svg = d3.select(containerElement)
+                .append('svg')
+
+            svg.attr("width", svgWidth + margin.left + margin.right)
+                .attr("height", svgHeight + margin.top + margin.bottom)
+                .append("g")
+                    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+            // Add the axes
+            svg.append("g")
+                .attr("class", "x axis")
+                .attr("transform", "translate(0," + svgHeight + ")")
+                .call(scatterXAxis)
+                    .append("text")
+                    .attr("class", "label")
+                    .attr("x", svgWidth)
+                    .attr("y", -6)
+                    .style("text-anchor", "end")
+                    .text(xDim);
+
+            // y-axis
+            svg.append("g")
+                .attr("class", "y axis")
+                .call(scatterYAxis)
+                    .append("text")
+                    .attr("class", "label")
+                    .attr("transform", "rotate(-90)")
+                    .attr("y", 18)
+                    .attr("dy", ".71em")
+                    .style("text-anchor", "end")
+                    .text(yDim);
+
+            // draw dots into the scatterplot
+            svg.selectAll(".dot")
+                .data(data)
+                .enter().append("circle")
+                    .attr("class", "dot")
+                    .attr("r", 2.5)
+                    .attr('fill', 'none')
+                    .attr('stroke', 'blue')
+                    .attr("cx", (d) => scatterXScale(d.x))
+                    .attr("cy", (d) => scatterYScale(d.y))
+        }
+        /* END SCATTERPLOT CODE */
+
+        /* CONFUSION MATRIX CODE - YOU WILL NEED TO CHANGE THIS */
+        function buildConfusionMatrix(containerElement, groundTruth, modelPredictions) {
+            // Code below makes the confusion matrix
+            var table = d3.select(containerElement).append('table')
+                            .attr('class', 'confusion-matrix-table')
+
+            // Creating the other cells of the table
+            table.append('tr').html('<td/><td/><td>ground</td><td>truth</td>')
+            table.append('tr').html('<td/><td/><td>T</td><td>N</td>')
+            predictedTrueRow = table.append('tr').html('<td>Predicted</td><td>T</td>')
+            predictedFalseRow = table.append('tr').html('<td></td><td>N</td>')
+
+            // Here, filling in the values.  This is also where you can style the confusion matrix.
+            var truePositives = 0;
+            var trueNegatives = 0;
+            var falsePositives = 0;
+            var falseNegatives = 0;
+
+            predictedTrueRow.append('td')
+                            .attr('class', 'innerMatrix')
+                            .text(truePositives)
+
+            predictedTrueRow.append('td')
+                            .attr('class', 'innerMatrix')
+                            .text(falsePositives)
+
+            predictedFalseRow.append('td')
+                            .attr('class', 'innerMatrix')
+                            .text(falseNegatives)
+
+            predictedFalseRow.append('td')
+                            .attr('class', 'innerMatrix')
+                            .text(trueNegatives)
+        }
+        /* END CONFUSION MATRIX CODE */
+
+        /* BEGIN SUPPORT CODE */
+        function initializeScales() {
+
+            // Fill in the possible dimensions into the select lists
+            d3.select('#x-axis-select')
+                .selectAll('option')
+                .data(possibleDimensions)
+                .enter()
+                    .append('option')
+                    .text((d) => d)
+                    .attr('value', (d,i) => i)
+                    .property("selected", function(d){ return d === xDim; })
+
+            d3.select('#y-axis-select')
+                .selectAll('option')
+                .data(possibleDimensions)
+                .enter()
+                    .append('option')
+                    .text((d) => d)
+                    .attr('value', (d,i) => i)
+                    .property("selected", function(d){ return d === yDim; })
+
+            d3.select("#x-axis-select")
+            .on("change", function(d) {
+                index = this.value;
+                xDim = possibleDimensions[index];
+                redrawScatterplots(modelContainers);
+            })
+
+            d3.select("#y-axis-select")
+            .on("change", function(d) {
+                index = this.value;
+                yDim = possibleDimensions[index];
+                redrawScatterplots(modelContainers);
+            })
+
+        }
+
+        function initializeModels() {
+            d3.select('.models-container ul')
+                .selectAll('li')
+                .data(Object.keys(predictionData).filter((k) => k !== 'ground_truth')).enter()
+                    .append('li')
+                    .attr('class', 'model-li')
+                    .attr('id', (d) => d.replace(/ /g,"-"))
+                    .html((d) => '<h2>' + d + '</h2>')
+                        .append('div')
+                        .attr('class', 'model-confusion-matrix')
+                        .attr('id', (d) => 'model-confusion-matrix-' + d.replace(/ /g,"-"))
+
+            return Object.keys(predictionData)
+        }
+
+        function parseData(data) {
+            // We need to add some random jitter because there are so few points
+            epsilon = 0.4
+            scatterplotData = Object.keys(data).map((k) => { return {id: k, x: data[k][xDim] + ((0.5 - Math.random()) * epsilon), y: data[k][yDim] + ((0.5 - Math.random()) * epsilon)} } )
+            return scatterplotData;
+        }
+
+        function redrawScatterplots(modelContainers) {
+            scatterplotData = parseData(happinessData)
+            // Render the data svg
+            buildScatterPlot('#dataset-svg', scatterplotData, [], predictionData['ground_truth'])
+
+            modelContainers.forEach((c) => { buildScatterPlot('#' + c.replace(/ /g,"-"), scatterplotData, predictionData[c], predictionData['ground_truth']) } );
+        }
+
+        function drawConfusionMatrices(modelContainers) {
+            modelContainers.forEach((c) => { buildConfusionMatrix('#model-confusion-matrix-' + c.replace(/ /g,"-"), predictionData['ground_truth'], predictionData[c] ) });
+        }
+    </script>
+</body>
+</html>
